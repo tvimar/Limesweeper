@@ -3,9 +3,12 @@ import javax.swing.JButton;
 
 public class Painter {
 	private ImageIcon [] icons;
-	private int NUM_IMAGES = 12;
+	private int NUM_IMAGES = 15;
 	
 	private int FLAG = 11;
+	private int HAPPY = 12;
+	private int WINNING = 13;
+	private int LOST = 14;
 	
 	public Painter() {
 		icons = new ImageIcon [NUM_IMAGES];
@@ -24,5 +27,17 @@ public class Painter {
 	
 	public ImageIcon getFlag() {
 		return icons[FLAG];
+	}
+	
+	public void paintHappyFace(JButton button) {
+		paintButton(button, HAPPY);
+	}
+	
+	public void paintWinningFace(JButton button) {
+		paintButton(button, WINNING);
+	}
+	
+	public void paintLosingFace(JButton button) {
+		paintButton(button, LOST);
 	}
 }

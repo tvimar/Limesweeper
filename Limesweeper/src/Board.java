@@ -1,6 +1,10 @@
+import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Random;
@@ -8,6 +12,7 @@ import java.util.Random;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -38,7 +43,16 @@ public class Board extends JFrame {
 	private Random _rng;
 	private Painter _painter;
 	
-	private JPanel _tilePanel;
+	private JPanel _tilePanel; // For tiles
+	private JPanel _topPanel; // For mine counter/timer/smiley face
+	private JPanel _boardPanel; // Put former two panels on this
+	
+	private JTextField _minecount;
+	private Dimension _boardDimension;
+	
+	private Timer _timer;
+	private int _time;
+	private JTextField _timedisplay;
 	
 	// Constructor
 	
@@ -47,10 +61,6 @@ public class Board extends JFrame {
 		_painter = new Painter();
 		int difficulty = promptDifficulty();
 		initStats(difficulty);
-
-		setPreferredSize(new Dimension(1000, 600));
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		pack();
 		
 		initBoard();
 
@@ -60,14 +70,29 @@ public class Board extends JFrame {
 	// Initialization functions
 	
 	private void initBoard() {
+		
+		setPreferredSize(_boardDimension);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		pack();
+		_boardPanel = new JPanel();
+		_boardPanel.setLayout(new BorderLayout());
+		
 		//set up the board itself
 		_tilePanel = setUpField();
+		
+		//set up counter
+		_topPanel = setUpTop();
+		
+		//set up timer
+		setUpTimer();
 		
 		// Grab 10 random indexes to setMines;
 		_rng = new Random();
 		setBoardMines();
 		
-        add(_tilePanel);
+		_boardPanel.add(_tilePanel, BorderLayout.SOUTH);
+		_boardPanel.add(_topPanel, BorderLayout.CENTER);
+        add(_boardPanel);
 	}
 	
 	private JPanel setUpField() {
@@ -90,6 +115,42 @@ public class Board extends JFrame {
 		return tilePanel;
 	}
 	
+	private JPanel setUpTop() {
+		JPanel topPanel = new JPanel();
+		topPanel.setSize(new Dimension(400, 60));
+		topPanel.setLayout(new BorderLayout());
+		
+		_minecount = new JTextField(String.valueOf(_minesleft), 3);
+		_minecount.setEditable(false);
+		_minecount.setSize(new Dimension(60, 60));
+		Font bigFont = _minecount.getFont().deriveFont(Font.PLAIN, 32f);
+		_minecount.setFont(bigFont);
+		_minecount.setHorizontalAlignment(JTextField.RIGHT);
+		
+		_timedisplay = new JTextField("0", 3);
+		_timedisplay.setEditable(false);
+		_timedisplay.setSize(new Dimension(60, 60));
+		Font bigFont2 = _timedisplay.getFont().deriveFont(Font.PLAIN, 32f);
+		_timedisplay.setFont(bigFont2);
+		_timedisplay.setHorizontalAlignment(JTextField.RIGHT);
+		
+		topPanel.add(_minecount, BorderLayout.WEST);
+		topPanel.add(_timedisplay, BorderLayout.EAST);
+		return topPanel;
+	}
+	
+	private void setUpTimer() {
+		_time = 0;
+		ActionListener updateTime = new ActionListener() {
+	      public void actionPerformed(ActionEvent evt) {
+	          //...Perform a task...
+	    	  _time++;
+	    	  _timedisplay.setText(String.valueOf(_time));
+	      }
+		};
+		_timer = new Timer(1000, updateTime);
+	}
+	
 	private void addTile(JPanel tilePanel, GridBagConstraints constraint, int x, int y) {
 		_gamefield[x][y] = new Tile();
 		addTileListener(_gamefield[x][y], x, y);
@@ -108,13 +169,15 @@ public class Board extends JFrame {
 						if(_gamefield[x][y].wasChecked() == false) {
 							if(_gamefield[x][y].getIcon() == _painter.getFlag()) {
 								_painter.paintButton(_gamefield[x][y], UNCLICKED);
+								updateMineCount(1);
 							} else {
 								_painter.paintButton(_gamefield[x][y], FLAG);
+								updateMineCount(-1);
 							}
 						}
 					}
 					else {
-						clickSquare(x, y);
+						if(_gamefield[x][y].getIcon() != _painter.getFlag()) clickSquare(x, y);
 					}	
 				}
 			}
@@ -122,11 +185,11 @@ public class Board extends JFrame {
 	}
 	
 	private int promptDifficulty() {
-		//JOptionPane.showMessageDialog(this, "You win!");
 		String [] options = {"Easy", "Medium", "Difficult"};
 		String msg = "Select your difficulty";
-		return JOptionPane.showOptionDialog(null, msg, "Difficulty Selection",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+		String title = "Difficulty Selection";
+		return JOptionPane.showOptionDialog(null, msg, title, JOptionPane.DEFAULT_OPTION, 
+				JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 	}
 	
 	private void initStats(int difficulty) {
@@ -134,14 +197,17 @@ public class Board extends JFrame {
 			_boardWidth = 9;
 			_boardHeight = 9;
 			_numberOfMines = 10;
+			_boardDimension = new Dimension(300, 400);
 		} else if(difficulty == MEDIUM) {
 			_boardWidth = 16;
 			_boardHeight = 16;
 			_numberOfMines = 40;
+			_boardDimension = new Dimension(510, 600);
 		} else if(difficulty == HARD) {
 			_boardWidth = 30;
 			_boardHeight = 16;
 			_numberOfMines = 99;
+			_boardDimension = new Dimension(950, 600);
 		}
 		
 		_safeSquares = (_boardWidth * _boardHeight) - _numberOfMines;
@@ -155,6 +221,7 @@ public class Board extends JFrame {
 		// if first move
 		if(_squaresleft == _safeSquares) {
 			repositionMine(_gamefield[x][y]);
+			_timer.start();
 		} 
 		if (_gamefield[x][y].wasChecked() == false) revealSquare(x, y);
 	}
@@ -199,6 +266,11 @@ public class Board extends JFrame {
 			}
 		}
 		return minecount;
+	}
+	
+	private void updateMineCount(int x) {
+		_minesleft += x;
+		_minecount.setText(String.valueOf(_minesleft));
 	}
 	
 	// Mine setting functions
@@ -248,12 +320,14 @@ public class Board extends JFrame {
 	// End game functions
 	
 	private void gameOver() {
+		_timer.stop();
 		exposeMines();
 		JOptionPane.showMessageDialog(this, "You lost :(");
 		promptRetry();
 	}
 	
 	private void gameWon() {
+		_timer.stop();
 		JOptionPane.showMessageDialog(this, "You win!");
 		promptRetry();
 	}
@@ -269,7 +343,7 @@ public class Board extends JFrame {
 	}
 	
 	private void resetGame(int difficulty) {
-		remove(_tilePanel);
+		remove(_boardPanel);
 		initStats(difficulty);
 		initBoard();
 		setVisible(true);
