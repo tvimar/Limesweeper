@@ -21,14 +21,6 @@ public class Board extends JFrame {
 	
 	// Constants
 	
-	private int MINE = 9;
-	private int UNCLICKED = 10;
-	private int FLAG = 11;
-	
-	private int EASY = 0;
-	private int MEDIUM = 1;
-	private int HARD = 2;
-	
 	// Board members
 	
 	private Tile[][] _gamefield;
@@ -157,7 +149,7 @@ public class Board extends JFrame {
 		constraint.gridx = x;
 		constraint.gridy = y;
 		tilePanel.add(_gamefield[x][y], constraint);
-		_painter.paintButton(_gamefield[x][y], UNCLICKED);
+		_painter.paintButton(_gamefield[x][y], Enums.IconsEnum.UNCLICKED.getValue());
 	}
 	
 	private void addTileListener(Tile t, int x, int y) {
@@ -168,10 +160,10 @@ public class Board extends JFrame {
 					if (SwingUtilities.isRightMouseButton(e)) {
 						if(_gamefield[x][y].wasChecked() == false) {
 							if(_gamefield[x][y].getIcon() == _painter.getFlag()) {
-								_painter.paintButton(_gamefield[x][y], UNCLICKED);
+								_painter.paintButton(_gamefield[x][y], Enums.IconsEnum.UNCLICKED.getValue());
 								updateMineCount(1);
 							} else {
-								_painter.paintButton(_gamefield[x][y], FLAG);
+								_painter.paintButton(_gamefield[x][y], Enums.IconsEnum.FLAG.getValue());
 								updateMineCount(-1);
 							}
 						}
@@ -193,17 +185,17 @@ public class Board extends JFrame {
 	}
 	
 	private void initStats(int difficulty) {
-		if(difficulty == EASY) {
+		if(difficulty == Enums.DifficultyEnum.EASY.ordinal()) {
 			_boardWidth = 9;
 			_boardHeight = 9;
 			_numberOfMines = 10;
 			_boardDimension = new Dimension(300, 400);
-		} else if(difficulty == MEDIUM) {
+		} else if(difficulty == Enums.DifficultyEnum.MEDIUM.ordinal()) {
 			_boardWidth = 16;
 			_boardHeight = 16;
 			_numberOfMines = 40;
 			_boardDimension = new Dimension(510, 600);
-		} else if(difficulty == HARD) {
+		} else if(difficulty == Enums.DifficultyEnum.HARD.ordinal()) {
 			_boardWidth = 30;
 			_boardHeight = 16;
 			_numberOfMines = 99;
@@ -312,7 +304,7 @@ public class Board extends JFrame {
 	private void exposeMines() {
 		for(int y = 0; y < _boardHeight; y++) {
 			for(int x = 0; x < _boardWidth; x++) {
-				if(_gamefield[x][y].hasMine()) _painter.paintButton(_gamefield[x][y], MINE);
+				if(_gamefield[x][y].hasMine()) _painter.paintButton(_gamefield[x][y], Enums.IconsEnum.MINE.getValue());
 			}
 		}
 	}
