@@ -8,8 +8,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
+import javax.swing.BoxLayout;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -46,12 +50,15 @@ public class Board extends JFrame {
 	private int _time;
 	private JTextField _timedisplay;
 	
+	private CountDownLatch _latch;
+	private JLabel _smiley;
+	
 	// Constructor
 	
-	public Board(){
+	public Board(Painter painter, int difficulty, CountDownLatch latch){
 
-		_painter = new Painter();
-		int difficulty = promptDifficulty();
+		_latch = latch;
+		_painter = painter;
 		initStats(difficulty);
 		
 		initBoard();
@@ -109,33 +116,34 @@ public class Board extends JFrame {
 	
 	private JPanel setUpTop() {
 		JPanel topPanel = new JPanel();
-		topPanel.setSize(new Dimension(400, 60));
-		topPanel.setLayout(new BorderLayout());
+		topPanel.setMaximumSize(new Dimension(400, 60));
+		topPanel.setLayout(new GridBagLayout());
 		
-		_minecount = new JTextField(String.valueOf(_minesleft), 3);
-		_minecount.setEditable(false);
-		_minecount.setSize(new Dimension(60, 60));
-		Font bigFont = _minecount.getFont().deriveFont(Font.PLAIN, 32f);
-		_minecount.setFont(bigFont);
-		_minecount.setHorizontalAlignment(JTextField.RIGHT);
+		_minecount = makeDisplay(String.valueOf(_minesleft));
+		_timedisplay = makeDisplay("0");
+		_smiley = new JLabel(_painter.getHappyFace());
+		_smiley.setPreferredSize(new Dimension(60, 60));
 		
-		_timedisplay = new JTextField("0", 3);
-		_timedisplay.setEditable(false);
-		_timedisplay.setSize(new Dimension(60, 60));
-		Font bigFont2 = _timedisplay.getFont().deriveFont(Font.PLAIN, 32f);
-		_timedisplay.setFont(bigFont2);
-		_timedisplay.setHorizontalAlignment(JTextField.RIGHT);
-		
-		topPanel.add(_minecount, BorderLayout.WEST);
-		topPanel.add(_timedisplay, BorderLayout.EAST);
+		topPanel.add(_minecount);
+		topPanel.add(_smiley);
+		topPanel.add(_timedisplay);
 		return topPanel;
+	}
+	
+	private JTextField makeDisplay(String start) {
+		JTextField newdisplay = new JTextField(start, 3);
+		newdisplay.setEditable(false);
+		newdisplay.setMaximumSize(new Dimension(60, 55));
+		Font bigFont = newdisplay.getFont().deriveFont(Font.PLAIN, 32f);
+		newdisplay.setFont(bigFont);
+		newdisplay.setHorizontalAlignment(JTextField.RIGHT);
+		return newdisplay;
 	}
 	
 	private void setUpTimer() {
 		_time = 0;
 		ActionListener updateTime = new ActionListener() {
 	      public void actionPerformed(ActionEvent evt) {
-	          //...Perform a task...
 	    	  _time++;
 	    	  _timedisplay.setText(String.valueOf(_time));
 	      }
@@ -174,14 +182,6 @@ public class Board extends JFrame {
 				}
 			}
 		);
-	}
-	
-	private int promptDifficulty() {
-		String [] options = {"Easy", "Medium", "Difficult"};
-		String msg = "Select your difficulty";
-		String title = "Difficulty Selection";
-		return JOptionPane.showOptionDialog(null, msg, title, JOptionPane.DEFAULT_OPTION, 
-				JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 	}
 	
 	private void initStats(int difficulty) {
@@ -313,31 +313,22 @@ public class Board extends JFrame {
 	
 	private void gameOver() {
 		_timer.stop();
+		_smiley.setIcon(_painter.getLosingFace());
 		exposeMines();
 		JOptionPane.showMessageDialog(this, "You lost :(");
-		promptRetry();
+		endGame();
 	}
 	
 	private void gameWon() {
 		_timer.stop();
+		_smiley.setIcon(_painter.getWinningFace());
 		JOptionPane.showMessageDialog(this, "You win!");
-		promptRetry();
+		endGame();
 	}
 	
-	private void promptRetry() {
-		int result = JOptionPane.showConfirmDialog (null, "Would you like to play again?","Retry",JOptionPane.YES_NO_OPTION);
-		if (result == 0) {
-			int newdifficulty = promptDifficulty();
-			resetGame(newdifficulty);
-		} else {
-			System.exit(0);
-		}
-	}
-	
-	private void resetGame(int difficulty) {
-		remove(_boardPanel);
-		initStats(difficulty);
-		initBoard();
-		setVisible(true);
+	private void endGame() {
+		setVisible(false);
+		_latch.countDown();
+		dispose();
 	}
 }

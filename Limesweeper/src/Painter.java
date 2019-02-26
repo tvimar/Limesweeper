@@ -24,15 +24,15 @@ public class Painter {
 		return icons[Enums.IconsEnum.FLAG.getValue()];
 	}
 	
-	public void paintHappyFace(JButton button) {
-		paintButton(button, Enums.IconsEnum.HAPPY.getValue());
+	public ImageIcon getHappyFace() {
+		return icons[Enums.IconsEnum.HAPPY.getValue()];
 	}
 	
-	public void paintWinningFace(JButton button) {
-		paintButton(button, Enums.IconsEnum.WINNING.getValue());
+	public ImageIcon getWinningFace() {
+		return icons[Enums.IconsEnum.WINNING.getValue()];
 	}
 	
-	public void paintLosingFace(JButton button) {
-		paintButton(button, Enums.IconsEnum.LOST.getValue());
+	public ImageIcon getLosingFace() {
+		return icons[Enums.IconsEnum.LOST.getValue()];
 	}
 }
